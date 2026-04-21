@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Key Club Attendance</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f4f0;
+    --surface: #ffffff;
+    --surface2: #f0efe9;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --text: #1a1a18;
+    --text2: #5f5e5a;
+    --text3: #9a9890;
+    --accent: #1a1a18;
+    --accent-fg: #ffffff;
+    --success-bg: #eaf3de;
+    --success-text: #3b6d11;
+    --warning-bg: #faeeda;
+    --warning-text: #854f0b;
+    --danger-text: #a32d2d;
+    --danger-bg: #fcebeb;
+    --info-bg: #e6f1fb;
+    --info-text: #185fa5;
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1c1c1a;
+      --surface: #252523;
+      --surface2: #2e2e2b;
+      --border: rgba(255,255,255,0.1);
+      --border2: rgba(255,255,255,0.18);
+      --text: #f0efe9;
+      --text2: #a8a7a0;
+      --text3: #666560;
+      --accent: #f0efe9;
+      --accent-fg: #1a1a18;
+      --success-bg: #173404;
+      --success-text: #c0dd97;
+      --warning-bg: #412402;
+      --warning-text: #fac775;
+      --danger-text: #f09595;
+      --danger-bg: #501313;
+      --info-bg: #042c53;
+      --info-text: #b5d4f4;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .screen { display: none; min-height: 100vh; padding: 2rem 1rem; }
+  .screen.active { display: block; }
+
+  .center-wrap {
+    display: flex; align-items: center; justify-content: center; min-height: 100vh;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+  }
+
+  .col { display: flex; flex-direction: column; gap: 10px; }
+  .row { display: flex; gap: 10px; align-items: center; }
+
+  input[type="text"],
+  input[type="password"],
+  input[type="file"],
+  select {
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    border: 0.5px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 9px 12px;
+    width: 100%;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus { border-color: var(--text2); box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
+
+  button {
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    padding: 9px 16px;
+    border: 0.5px solid var(--border2);
+    background: transparent;
+    color: var(--text);
+    transition: background 0.12s, opacity 0.12s;
+    white-space: nowrap;
+  }
+  button:hover { background: var(--surface2); }
+  button:active { transform: scale(0.98); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  button.primary {
+    background: var(--accent);
+    color: var(--accent-fg);
+    border-color: var(--accent);
+  }
+  button.primary:hover { opacity: 0.85; background: var(--accent); }
+
+  button.danger { color: var(--danger-text); border-color: var(--border2); }
+  button.danger:hover { background: var(--danger-bg); }
+
+  label {
+    font-size: 13px;
+    color: var(--text2);
+    display: block;
+    margin-bottom: 3px;
+  }
+
+  h1 { font-size: 22px; font-weight: 600; }
+  h2 { font-size: 18px; font-weight: 600; }
+  h3 { font-size: 15px; font-weight: 600; }
+
+  hr { border: none; border-top: 0.5px solid var(--border); margin: 0.75rem 0; }
+
+  .stat {
+    background: var(--surface2);
+    border-radius: var(--radius);
+    padding: 1rem;
+    text-align: center;
+    flex: 1;
+  }
+  .stat-num { font-size: 26px; font-weight: 600; }
+  .stat-lbl { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    text-align: left; font-size: 12px; font-weight: 500;
+    color: var(--text2); padding: 6px 8px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  td { padding: 9px 8px; border-bottom: 0.5px solid var(--border); }
+
+  .empty { text-align: center; color: var(--text3); padding: 2rem; font-size: 14px; }
+
+  .badge {
+    display: inline-block; font-size: 11px; padding: 2px 8px;
+    border-radius: 99px; font-weight: 500;
+  }
+  .badge-late { background: var(--warning-bg); color: var(--warning-text); }
+  .badge-ontime { background: var(--success-bg); color: var(--success-text); }
+
+  .roster-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 14px;
+    transition: background 0.1s;
+  }
+  .roster-item:hover { background: var(--surface2); }
+  .roster-item.selected { font-weight: 600; background: var(--surface2); }
+  .roster-item:last-child { border-bottom: none; }
+
+  .past-event-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 0.5px solid var(--border);
+    gap: 8px; flex-wrap: wrap;
+  }
+  .past-event-row:last-child { border-bottom: none; }
+
+  .msg-success { font-size: 13px; color: var(--success-text); }
+  .msg-error { font-size: 13px; color: var(--danger-text); }
+
+  .checkin-success-icon {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: var(--success-bg); color: var(--success-text);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin: 0 auto 12px;
+  }
+
+  @media (max-width: 500px) {
+    .screen { padding: 1.25rem 0.75rem; }
+    .row.wrap { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<div id="screen-lock" class="screen active">
+  <div class="center-wrap">
+    <div style="width:100%;max-width:340px" class="col">
+      <div style="text-align:center;margin-bottom:1.25rem">
+        <div style="font-size:26px;font-weight:700;letter-spacing:-0.5px">Key Club</div>
+        <div style="font-size:14px;color:var(--text2);margin-top:4px">Attendance System</div>
+      </div>
+      <div class="card col">
+        <label>Admin password</label>
+        <input type="password" id="pw-input" placeholder="Enter password" />
+        <button class="primary" onclick="tryLogin()">Sign in</button>
+        <div id="pw-err" class="msg-error" style="display:none">Incorrect password. Try again.</div>
+      </div>
+      <div style="font-size:12px;color:var(--text3);text-align:center;margin-top:10px">
+        Member check-in is via QR code scan only
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div id="screen-admin" class="screen">
+  <div style="max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:1.5rem">
+
+    <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <h1>Key Club Attendance</h1>
+      <div class="row" style="gap:8px">
+        <button onclick="showScreen('settings')">Settings</button>
+        <button onclick="logout()">Sign out</button>
+      </div>
+    </div>
+
+    <!-- Create event -->
+    <div class="card col">
+      <h3>Create new event</h3>
+      <hr>
+      <div class="row wrap" style="flex-wrap:wrap;gap:10px">
+        <div class="col" style="flex:1;min-width:200px">
+          <label>Event name</label>
+          <input id="evt-name" type="text" placeholder="e.g. Weekly Meeting #12" />
+        </div>
+        <div class="col" style="justify-content:flex-end">
+          <label style="visibility:hidden">Go</label>
+          <button class="primary" onclick="createEvent()">Generate QR code</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active event -->
+    <div id="active-event-card" class="card col" style="display:none">
+      <div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <h3 id="active-evt-name"></h3>
+          <div style="font-size:13px;color:var(--text2);margin-top:2px" id="active-evt-date"></div>
+        </div>
+        <div class="row" style="gap:8px">
+          <button onclick="exportCSV()">Export CSV</button>
+          <button class="danger" onclick="closeEvent()">Close event</button>
+        </div>
+      </div>
+      <hr>
+      <div class="row" style="gap:1.5rem;flex-wrap:wrap;align-items:flex-start">
+        <div class="col" style="flex:0 0 auto;align-items:center">
+          <div style="font-size:12px;color:var(--text2);margin-bottom:6px;align-self:flex-start">Scan to check in</div>
+          <div id="qr-container" style="background:white;padding:10px;border-radius:var(--radius);border:0.5px solid var(--border)"></div>
+          <div style="font-size:11px;color:var(--text3);margin-top:8px">or share this link:</div>
+          <div style="display:flex;gap:6px;width:100%;margin-top:4px">
+            <input id="checkin-link" type="text" readonly style="font-size:11px;flex:1" />
+            <button onclick="copyCheckinLink()" style="flex:0 0 auto;font-size:12px;padding:6px 10px">Copy</button>
+          </div>
+        </div>
+        <div class="col" style="flex:1;min-width:240px">
+          <div class="row" style="gap:10px">
+            <div class="stat"><div class="stat-num" id="stat-total">0</div><div class="stat-lbl">checked in</div></div>
+            <div class="stat"><div class="stat-num" id="stat-late">0</div><div class="stat-lbl">late</div></div>
+          </div>
+          <div style="max-height:280px;overflow-y:auto;border:0.5px solid var(--border);border-radius:var(--radius)">
+            <table>
+              <thead><tr><th>Name</th><th>Time</th><th>Status</th></tr></thead>
+              <tbody id="attendance-table"><tr><td colspan="3" class="empty">Waiting for check-ins...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Past events -->
+    <div class="card col">
+      <h3>Past events</h3>
+      <hr>
+      <div id="past-events-list"><div class="empty">No past events yet</div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div id="screen-settings" class="screen">
+  <div style="max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:1.5rem">
+
+    <div class="row">
+      <button onclick="showScreen('admin')" style="margin-right:4px">← Back</button>
+      <h1>Settings</h1>
+    </div>
+
+    <!-- Change password -->
+    <div class="card col">
+      <h3>Admin password</h3>
+      <hr>
+      <label>New password</label>
+      <input type="password" id="new-pw" placeholder="Enter new password" />
+      <label>Confirm password</label>
+      <input type="password" id="confirm-pw" placeholder="Confirm new password" />
+      <button class="primary" style="align-self:flex-start" onclick="changePassword()">Update password</button>
+      <div id="pw-change-msg" style="display:none"></div>
+    </div>
+
+    <!-- Roster -->
+    <div class="card col">
+      <h3>Member roster</h3>
+      <hr>
+      <div style="font-size:13px;color:var(--text2)">
+        Upload a CSV file with one member name per row. Only the first column is used.
+      </div>
+      <input type="file" id="csv-upload" accept=".csv" onchange="uploadCSV()" />
+      <div id="roster-count" style="font-size:13px;color:var(--text2)"></div>
+      <div id="roster-preview" style="max-height:200px;overflow-y:auto;border:0.5px solid var(--border);border-radius:var(--radius)"></div>
+      <button class="danger" style="align-self:flex-start" onclick="clearRoster()">Clear roster</button>
+    </div>
+
+    <!-- Magic link -->
+    <div class="card col">
+      <h3>Shared access link</h3>
+      <hr>
+      <div style="font-size:13px;color:var(--text2)">
+        Share this link with trusted officers so they can access the admin panel without your password.
+      </div>
+      <div class="row" style="gap:8px">
+        <input id="magic-link-display" type="text" readonly style="font-size:12px;flex:1" />
+        <button onclick="copyMagicLink()">Copy</button>
+      </div>
+      <button class="danger" style="align-self:flex-start" onclick="rotateMagicLink()">Regenerate link</button>
+      <div id="magic-msg" style="display:none"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CHECK-IN PAGE -->
+<div id="screen-checkin" class="screen">
+  <div style="max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:1rem">
+
+    <div style="text-align:center;padding-top:0.5rem">
+      <div style="font-size:20px;font-weight:700" id="ci-evt-name">Key Club</div>
+      <div style="font-size:13px;color:var(--text2);margin-top:3px" id="ci-evt-date"></div>
+    </div>
+
+    <div class="card col" id="ci-form">
+      <label style="font-size:14px;color:var(--text);font-weight:500">Find your name</label>
+      <input id="ci-search" type="text" placeholder="Start typing your name..." oninput="filterRoster()" autocomplete="off" />
+      <div id="ci-roster" style="border:0.5px solid var(--border);border-radius:var(--radius);max-height:260px;overflow-y:auto;"></div>
+      <div id="ci-selected" style="display:none;padding:10px 12px;background:var(--info-bg);color:var(--info-text);border-radius:var(--radius);font-size:14px;font-weight:500"></div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:var(--text);margin:4px 0 0">
+        <input type="checkbox" id="ci-late" style="width:auto;margin:0" />
+        I'm arriving late
+      </label>
+      <button class="primary" id="ci-submit" onclick="submitCheckin()" disabled>Check in</button>
+      <div id="ci-err" class="msg-error" style="display:none"></div>
+    </div>
+
+    <div id="ci-success" class="card" style="display:none;text-align:center;padding:2rem">
+      <div class="checkin-success-icon">✓</div>
+      <div style="font-size:18px;font-weight:600" id="ci-success-name"></div>
+      <div style="font-size:14px;color:var(--text2);margin-top:6px">You're checked in!</div>
+    </div>
+
+    <div id="ci-closed" class="card" style="display:none;text-align:center;padding:2rem">
+      <div style="font-size:32px;margin-bottom:12px">🔒</div>
+      <div style="font-size:16px;font-weight:600">Check-in is closed</div>
+      <div style="font-size:14px;color:var(--text2);margin-top:6px">This event is no longer accepting check-ins.</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ─── Storage ───────────────────────────────────────────────────────────────
+const DB = {
+  get(k) { try { return JSON.parse(localStorage.getItem('kc__' + k)); } catch { return null; } },
+  set(k, v) { localStorage.setItem('kc__' + k, JSON.stringify(v)); }
+};
+
+function initDefaults() {
+  if (!DB.get('password')) DB.set('password', 'keyclub2025');
+  if (!DB.get('magic_token')) DB.set('magic_token', rand());
+  if (!DB.get('roster')) DB.set('roster', []);
+  if (!DB.get('events')) DB.set('events', []);
+  if (!DB.get('open_events')) DB.set('open_events', []);
+}
+
+function rand() { return Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2); }
+
+// ─── Routing ───────────────────────────────────────────────────────────────
+let activeEvent = null;
+let pollTimer = null;
+let activeCheckinId = null;
+let selectedMember = null;
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function routeByURL() {
+  const params = new URLSearchParams(window.location.search);
+  const checkinId = params.get('checkin');
+  const adminToken = params.get('admin');
+
+  if (checkinId) {
+    activeCheckinId = checkinId;
+    loadCheckinScreen(checkinId);
+  } else if (adminToken && adminToken === DB.get('magic_token')) {
+    showScreen('admin');
+    renderPastEvents();
+    renderRosterPreview();
+    updateMagicLinkDisplay();
+  } else {
+    showScreen('lock');
+  }
+}
+
+// ─── Auth ──────────────────────────────────────────────────────────────────
+function tryLogin() {
+  const pw = document.getElementById('pw-input').value;
+  if (pw === DB.get('password')) {
+    document.getElementById('pw-err').style.display = 'none';
+    showScreen('admin');
+    renderPastEvents();
+    renderRosterPreview();
+    updateMagicLinkDisplay();
+  } else {
+    document.getElementById('pw-err').style.display = 'block';
+  }
+}
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+
+function logout() {
+  activeEvent = null;
+  clearInterval(pollTimer);
+  document.getElementById('active-event-card').style.display = 'none';
+  showScreen('lock');
+  document.getElementById('pw-input').value = '';
+}
+
+function changePassword() {
+  const np = document.getElementById('new-pw').value;
+  const cp = document.getElementById('confirm-pw').value;
+  const msg = document.getElementById('pw-change-msg');
+  msg.style.display = 'block';
+  if (!np) { msg.className = 'msg-error'; msg.textContent = 'Enter a new password.'; return; }
+  if (np !== cp) { msg.className = 'msg-error'; msg.textContent = 'Passwords do not match.'; return; }
+  DB.set('password', np);
+  msg.className = 'msg-success'; msg.textContent = 'Password updated successfully.';
+  document.getElementById('new-pw').value = '';
+  document.getElementById('confirm-pw').value = '';
+}
+
+// ─── Events ────────────────────────────────────────────────────────────────
+function createEvent() {
+  const name = document.getElementById('evt-name').value.trim();
+  if (!name) { alert('Please enter an event name.'); return; }
+  const id = Date.now().toString(36) + rand().slice(0, 4);
+  const event = { id, name, date: new Date().toLocaleString(), attendees: [] };
+  activeEvent = event;
+
+  // Save to open events list
+  const open = DB.get('open_events') || [];
+  open.push(id);
+  DB.set('open_events', open);
+
+  // Save event data
+  const events = DB.get('events') || [];
+  events.unshift(event);
+  DB.set('events', events);
+
+  renderActiveEvent();
+  document.getElementById('evt-name').value = '';
+
+  clearInterval(pollTimer);
+  pollTimer = setInterval(pollAttendance, 2500);
+}
+
+function renderActiveEvent() {
+  const card = document.getElementById('active-event-card');
+  card.style.display = 'flex';
+  document.getElementById('active-evt-name').textContent = activeEvent.name;
+  document.getElementById('active-evt-date').textContent = activeEvent.date;
+
+  const link = window.location.origin + window.location.pathname + '?checkin=' + activeEvent.id;
+  document.getElementById('checkin-link').value = link;
+
+  const qrDiv = document.getElementById('qr-container');
+  qrDiv.innerHTML = '';
+  new QRCode(qrDiv, { text: link, width: 180, height: 180, colorDark: '#000000', colorLight: '#ffffff' });
+
+  updateAttendanceTable();
+}
+
+function pollAttendance() {
+  if (!activeEvent) return;
+  const events = DB.get('events') || [];
+  const ev = events.find(e => e.id === activeEvent.id);
+  if (ev && ev.attendees.length !== activeEvent.attendees.length) {
+    activeEvent = ev;
+    updateAttendanceTable();
+  }
+}
+
+function updateAttendanceTable() {
+  const atts = activeEvent.attendees || [];
+  document.getElementById('stat-total').textContent = atts.length;
+  document.getElementById('stat-late').textContent = atts.filter(a => a.late).length;
+  const tbody = document.getElementById('attendance-table');
+  if (atts.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">Waiting for check-ins...</td></tr>';
+    return;
+  }
+  tbody.innerHTML = atts.slice().reverse().map(a => `
+    <tr>
+      <td>${esc(a.name)}</td>
+      <td style="color:var(--text2);font-size:12px">${a.time}</td>
+      <td><span class="badge ${a.late ? 'badge-late' : 'badge-ontime'}">${a.late ? 'Late' : 'On time'}</span></td>
+    </tr>
+  `).join('');
+}
+
+function closeEvent() {
+  if (!activeEvent) return;
+  if (!confirm('Close this event? Members will no longer be able to check in.')) return;
+  saveActiveEvent();
+  // Remove from open list
+  let open = DB.get('open_events') || [];
+  open = open.filter(id => id !== activeEvent.id);
+  DB.set('open_events', open);
+  clearInterval(pollTimer);
+  activeEvent = null;
+  document.getElementById('active-event-card').style.display = 'none';
+  renderPastEvents();
+}
+
+function saveActiveEvent() {
+  if (!activeEvent) return;
+  const events = DB.get('events') || [];
+  const idx = events.findIndex(e => e.id === activeEvent.id);
+  if (idx >= 0) events[idx] = activeEvent; else events.unshift(activeEvent);
+  DB.set('events', events);
+}
+
+function renderPastEvents() {
+  const events = DB.get('events') || [];
+  const openIds = DB.get('open_events') || [];
+  // Filter to only closed events
+  const past = events.filter(e => !openIds.includes(e.id));
+  const container = document.getElementById('past-events-list');
+  if (past.length === 0) { container.innerHTML = '<div class="empty">No past events yet</div>'; return; }
+  container.innerHTML = past.map(ev => `
+    <div class="past-event-row">
+      <div>
+        <div style="font-size:14px;font-weight:500">${esc(ev.name)}</div>
+        <div style="font-size:12px;color:var(--text2)">${ev.date} &middot; ${ev.attendees.length} attendee${ev.attendees.length !== 1 ? 's' : ''}</div>
+      </div>
+      <div class="row" style="gap:8px">
+        <button onclick="exportCSVById('${ev.id}')">Export CSV</button>
+        <button class="danger" onclick="deleteEvent('${ev.id}')">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteEvent(id) {
+  if (!confirm('Delete this event and all its attendance data? This cannot be undone.')) return;
+  let events = DB.get('events') || [];
+  events = events.filter(e => e.id !== id);
+  DB.set('events', events);
+  renderPastEvents();
+}
+
+// ─── CSV Export ────────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!activeEvent) return;
+  saveActiveEvent();
+  doExport(activeEvent);
+}
+
+function exportCSVById(id) {
+  const events = DB.get('events') || [];
+  const ev = events.find(e => e.id === id);
+  if (ev) doExport(ev);
+}
+
+function doExport(ev) {
+  const rows = [['Name', 'Event', 'Late', 'Check-in Time']];
+  (ev.attendees || []).forEach(a => rows.push([
+    '"' + a.name.replace(/"/g, '""') + '"',
+    '"' + ev.name.replace(/"/g, '""') + '"',
+    a.late ? 'Yes' : 'No',
+    a.time
+  ]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (ev.name || 'attendance').replace(/[^a-z0-9]/gi, '_') + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Roster Management ─────────────────────────────────────────────────────
+function uploadCSV() {
+  const file = document.getElementById('csv-upload').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.split('\n').map(l => l.trim()).filter(Boolean);
+    const names = lines.map(l => l.split(',')[0].replace(/["']/g, '').trim()).filter(Boolean);
+    DB.set('roster', names);
+    renderRosterPreview();
+  };
+  reader.readAsText(file);
+}
+
+function renderRosterPreview() {
+  const roster = DB.get('roster') || [];
+  const countEl = document.getElementById('roster-count');
+  const previewEl = document.getElementById('roster-preview');
+  if (!countEl) return;
+  if (roster.length === 0) {
+    countEl.textContent = 'No roster loaded';
+    previewEl.innerHTML = '';
+    return;
+  }
+  countEl.textContent = roster.length + ' members loaded';
+  const preview = roster.slice(0, 12);
+  previewEl.innerHTML = preview.map(n => `<div class="roster-item" style="cursor:default">${esc(n)}</div>`).join('') +
+    (roster.length > 12 ? `<div style="padding:8px 12px;font-size:12px;color:var(--text3)">...and ${roster.length - 12} more</div>` : '');
+}
+
+function clearRoster() {
+  if (!confirm('Clear all roster members? This cannot be undone.')) return;
+  DB.set('roster', []);
+  renderRosterPreview();
+}
+
+// ─── Magic Link ────────────────────────────────────────────────────────────
+function updateMagicLinkDisplay() {
+  const token = DB.get('magic_token');
+  const link = window.location.origin + window.location.pathname + '?admin=' + token;
+  const el = document.getElementById('magic-link-display');
+  if (el) el.value = link;
+}
+
+function copyMagicLink() {
+  const el = document.getElementById('magic-link-display');
+  el.select(); document.execCommand('copy');
+  showTempMsg('magic-msg', 'Link copied!', 'msg-success');
+}
+
+function rotateMagicLink() {
+  if (!confirm('Regenerate the shared link? The old link will stop working immediately.')) return;
+  DB.set('magic_token', rand());
+  updateMagicLinkDisplay();
+  showTempMsg('magic-msg', 'New link generated.', 'msg-success');
+}
+
+function copyCheckinLink() {
+  const el = document.getElementById('checkin-link');
+  el.select(); document.execCommand('copy');
+}
+
+// ─── Check-in Page ─────────────────────────────────────────────────────────
+function loadCheckinScreen(id) {
+  const events = DB.get('events') || [];
+  const open = DB.get('open_events') || [];
+  const ev = events.find(e => e.id === id);
+
+  if (!open.includes(id)) {
+    document.getElementById('ci-form').style.display = 'none';
+    document.getElementById('ci-closed').style.display = 'block';
+    showScreen('checkin');
+    if (ev) {
+      document.getElementById('ci-evt-name').textContent = ev.name;
+      document.getElementById('ci-evt-date').textContent = ev.date;
+    }
+    return;
+  }
+
+  if (ev) {
+    document.getElementById('ci-evt-name').textContent = ev.name;
+    document.getElementById('ci-evt-date').textContent = ev.date;
+  }
+
+  showScreen('checkin');
+  filterRoster();
+}
+
+function filterRoster() {
+  const q = (document.getElementById('ci-search').value || '').toLowerCase().trim();
+  const roster = DB.get('roster') || [];
+  const matches = q.length === 0
+    ? roster.slice(0, 25)
+    : roster.filter(n => n.toLowerCase().includes(q)).slice(0, 25);
+
+  const container = document.getElementById('ci-roster');
+  if (matches.length === 0) {
+    container.innerHTML = '<div class="empty">No matches found</div>';
+    return;
+  }
+  container.innerHTML = matches.map(n => `
+    <div class="roster-item ${selectedMember === n ? 'selected' : ''}" onclick="selectMember(${JSON.stringify(n)})">${esc(n)}</div>
+  `).join('');
+}
+
+function selectMember(name) {
+  selectedMember = name;
+  document.getElementById('ci-selected').style.display = 'block';
+  document.getElementById('ci-selected').textContent = name + ' selected';
+  document.getElementById('ci-submit').disabled = false;
+  document.getElementById('ci-err').style.display = 'none';
+  document.getElementById('ci-search').value = name;
+  document.getElementById('ci-roster').innerHTML = '';
+}
+
+function submitCheckin() {
+  if (!selectedMember || !activeCheckinId) return;
+
+  const events = DB.get('events') || [];
+  const open = DB.get('open_events') || [];
+
+  if (!open.includes(activeCheckinId)) {
+    document.getElementById('ci-err').style.display = 'block';
+    document.getElementById('ci-err').textContent = 'This event is no longer accepting check-ins.';
+    return;
+  }
+
+  const evIdx = events.findIndex(e => e.id === activeCheckinId);
+  if (evIdx === -1) {
+    document.getElementById('ci-err').style.display = 'block';
+    document.getElementById('ci-err').textContent = 'Event not found. Please re-scan the QR code.';
+    return;
+  }
+
+  if (events[evIdx].attendees.find(a => a.name === selectedMember)) {
+    document.getElementById('ci-err').style.display = 'block';
+    document.getElementById('ci-err').textContent = 'You\'ve already checked in to this event!';
+    return;
+  }
+
+  const late = document.getElementById('ci-late').checked;
+  events[evIdx].attendees.push({
+    name: selectedMember,
+    late,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+  DB.set('events', events);
+
+  document.getElementById('ci-form').style.display = 'none';
+  document.getElementById('ci-success').style.display = 'block';
+  document.getElementById('ci-success-name').textContent = selectedMember;
+}
+
+// ─── Utilities ─────────────────────────────────────────────────────────────
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showTempMsg(id, text, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = cls; el.textContent = text; el.style.display = 'block';
+  setTimeout(() => { el.style.display = 'none'; }, 2500);
+}
+
+// ─── Init ──────────────────────────────────────────────────────────────────
+initDefaults();
+routeByURL();
+</script>
+</body>
+</html>
